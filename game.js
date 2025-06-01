@@ -28,6 +28,10 @@ let previousTimes = [];
 // Create player image object
 const playerImage = new Image();
 playerImage.src = 'player.jpg';
+playerImage.onload = function() {
+    console.log('Player image loaded with dimensions:', playerImage.width, 'x', playerImage.height);
+    handleImageLoad();
+};
 playerImage.onerror = function(e) {
     console.error('Error loading player image:', e);
     alert('Could not load player image. Check console for details.');
@@ -35,7 +39,11 @@ playerImage.onerror = function(e) {
 
 // Create goal image object
 const goalImage = new Image();
-goalImage.src = 'sarah.jpg';
+goalImage.src = 'sarah.png';
+goalImage.onload = function() {
+    console.log('Goal image loaded with dimensions:', goalImage.width, 'x', goalImage.height);
+    handleImageLoad();
+};
 goalImage.onerror = function(e) {
     console.error('Error loading goal image:', e);
     alert('Could not load goal image. Check console for details.');
@@ -53,9 +61,6 @@ function handleImageLoad() {
     }
 }
 
-playerImage.onload = handleImageLoad;
-goalImage.onload = handleImageLoad;
-
 // Player properties
 const player = {
     x: 20,                    // starting x position (bottom left)
@@ -68,7 +73,7 @@ const player = {
 const goal = {
     x: canvas.width - 70,  // position from right
     y: 20,                 // position from top
-    size: 50              // size of the goal
+    size: 50              // base size
 };
 
 // Obstacles template (will be used to create random obstacles)
@@ -202,6 +207,57 @@ function keyUpHandler(event) {
     }
 }
 
+// Add touch controls
+const controlButtons = {
+    up: document.querySelector('.control-btn.up'),
+    down: document.querySelector('.control-btn.down'),
+    left: document.querySelector('.control-btn.left'),
+    right: document.querySelector('.control-btn.right')
+};
+
+// Handle touch events for control buttons
+Object.entries(controlButtons).forEach(([direction, button]) => {
+    if (button) {
+        button.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            switch(direction) {
+                case 'up': upPressed = true; break;
+                case 'down': downPressed = true; break;
+                case 'left': leftPressed = true; break;
+                case 'right': rightPressed = true; break;
+            }
+        });
+
+        button.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            switch(direction) {
+                case 'up': upPressed = false; break;
+                case 'down': downPressed = false; break;
+                case 'left': leftPressed = false; break;
+                case 'right': rightPressed = false; break;
+            }
+        });
+    }
+});
+
+// Prevent default touch behavior to avoid scrolling
+canvas.addEventListener('touchstart', (e) => e.preventDefault());
+canvas.addEventListener('touchmove', (e) => e.preventDefault());
+canvas.addEventListener('touchend', (e) => e.preventDefault());
+
+// Function to resize canvas
+function resizeCanvas() {
+    const container = canvas.parentElement;
+    const maxSize = Math.min(window.innerWidth - 20, window.innerHeight - 200, 400);
+    
+    canvas.style.width = maxSize + 'px';
+    canvas.style.height = maxSize + 'px';
+}
+
+// Add resize listener
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('load', resizeCanvas);
+
 // Draw the player with circular clipping and animated mouth
 function drawPlayer() {
     ctx.save(); // Save the current context state
@@ -235,7 +291,24 @@ function drawPlayer() {
 
 // Draw the goal
 function drawGoal() {
-    ctx.drawImage(goalImage, goal.x, goal.y, goal.size, goal.size);
+    // Calculate size while maintaining aspect ratio
+    let drawWidth = goal.size;
+    let drawHeight = goal.size;
+    
+    // Center the image in its allocated space
+    let drawX = goal.x;
+    let drawY = goal.y;
+    
+    ctx.save();
+    // Create circular clipping path
+    ctx.beginPath();
+    ctx.arc(drawX + drawWidth/2, drawY + drawHeight/2, goal.size/2, 0, Math.PI * 2);
+    ctx.clip();
+    
+    // Draw the image
+    ctx.drawImage(goalImage, drawX, drawY, drawWidth, drawHeight);
+    
+    ctx.restore();
 }
 
 // Draw obstacles

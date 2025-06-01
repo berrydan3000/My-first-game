@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My First Game</title>
     <style>
         /* Simple styling to center the canvas */
@@ -9,27 +10,37 @@
             border: 2px solid black;
             background: white;
             margin-bottom: 20px;
+            max-width: 100%;
+            touch-action: none;
         }
         body {
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
             background: #f0f0f0;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
         }
         .game-container {
             display: flex;
-            align-items: flex-start;
+            flex-direction: column-reverse;
+            align-items: center;
             gap: 20px;
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
         }
         .leaderboard {
             background: white;
             padding: 15px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            width: 150px;
+            width: 90%;
+            max-width: 400px;
         }
         .leaderboard h3 {
             margin: 0 0 10px 0;
@@ -72,6 +83,36 @@
             color: red;
             font-size: 28px;
         }
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            display: none;
+            gap: 10px;
+            z-index: 100;
+        }
+        @media (max-width: 768px) {
+            .controls {
+                display: grid;
+                grid-template-columns: repeat(3, 60px);
+                grid-template-rows: repeat(2, 60px);
+            }
+            .control-btn {
+                width: 60px;
+                height: 60px;
+                border-radius: 30px;
+                background: rgba(255, 255, 255, 0.8);
+                border: 2px solid #333;
+                font-size: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                touch-action: manipulation;
+            }
+            .up { grid-column: 2; grid-row: 1; }
+            .left { grid-column: 1; grid-row: 2; }
+            .down { grid-column: 2; grid-row: 2; }
+            .right { grid-column: 3; grid-row: 2; }
+        }
     </style>
 </head>
 <body>
@@ -87,6 +128,12 @@
     </div>
     <div class="title">
         Love in NW London <span class="heart">❤️</span>
+    </div>
+    <div class="controls">
+        <button class="control-btn up">⬆️</button>
+        <button class="control-btn left">⬅️</button>
+        <button class="control-btn down">⬇️</button>
+        <button class="control-btn right">➡️</button>
     </div>
     <script src="game.js"></script>
 </body>
