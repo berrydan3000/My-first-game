@@ -7,14 +7,19 @@ console.log('Canvas initialized:', canvas !== null);
 // Get DOM elements
 const timerElement = document.getElementById('timer');
 const timesListElement = document.getElementById('timesList');
+const lastScoreElement = document.getElementById('lastScore');
+const highScoreElement = document.getElementById('highScore');
 
 console.log('Timer element found:', timerElement !== null);
 console.log('Times list element found:', timesListElement !== null);
+console.log('Last score element found:', lastScoreElement !== null);
+console.log('High score element found:', highScoreElement !== null);
 
 // Timer variables
 let startTime = 0;
 let currentTime = 0;
 let timerRunning = false;
+let highScore = null;
 
 // Animation variables
 let mouthAngle = 0;
@@ -167,9 +172,53 @@ let leftPressed = false;
 let upPressed = false;
 let downPressed = false;
 
+// Touch variables
+let touchActive = false;
+let targetX = player.x;
+let targetY = player.y;
+const PLAYER_SPEED = 5; // Base speed for the player
+
 // Add keyboard event listeners
 document.addEventListener('keydown', keyDownHandler);
 document.addEventListener('keyup', keyUpHandler);
+
+// Add touch event listeners
+canvas.addEventListener('touchstart', handleTouchStart);
+canvas.addEventListener('touchmove', handleTouchMove);
+canvas.addEventListener('touchend', handleTouchEnd);
+
+// Handle touch events
+function handleTouchStart(e) {
+    e.preventDefault();
+    touchActive = true;
+    updateTouchPosition(e.touches[0]);
+}
+
+function handleTouchMove(e) {
+    e.preventDefault();
+    if (touchActive) {
+        updateTouchPosition(e.touches[0]);
+    }
+}
+
+function handleTouchEnd(e) {
+    e.preventDefault();
+    touchActive = false;
+}
+
+function updateTouchPosition(touch) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    // Calculate the target position based on touch
+    targetX = (touch.clientX - rect.left) * scaleX - player.size / 2;
+    targetY = (touch.clientY - rect.top) * scaleY - player.size / 2;
+    
+    // Clamp target position to canvas boundaries
+    targetX = Math.max(0, Math.min(targetX, canvas.width - player.size));
+    targetY = Math.max(0, Math.min(targetY, canvas.height - player.size));
+}
 
 // Handle key press
 function keyDownHandler(event) {
@@ -206,44 +255,6 @@ function keyUpHandler(event) {
         downPressed = false;
     }
 }
-
-// Add touch controls
-const controlButtons = {
-    up: document.querySelector('.control-btn.up'),
-    down: document.querySelector('.control-btn.down'),
-    left: document.querySelector('.control-btn.left'),
-    right: document.querySelector('.control-btn.right')
-};
-
-// Handle touch events for control buttons
-Object.entries(controlButtons).forEach(([direction, button]) => {
-    if (button) {
-        button.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            switch(direction) {
-                case 'up': upPressed = true; break;
-                case 'down': downPressed = true; break;
-                case 'left': leftPressed = true; break;
-                case 'right': rightPressed = true; break;
-            }
-        });
-
-        button.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            switch(direction) {
-                case 'up': upPressed = false; break;
-                case 'down': downPressed = false; break;
-                case 'left': leftPressed = false; break;
-                case 'right': rightPressed = false; break;
-            }
-        });
-    }
-});
-
-// Prevent default touch behavior to avoid scrolling
-canvas.addEventListener('touchstart', (e) => e.preventDefault());
-canvas.addEventListener('touchmove', (e) => e.preventDefault());
-canvas.addEventListener('touchend', (e) => e.preventDefault());
 
 // Function to resize canvas
 function resizeCanvas() {
@@ -376,21 +387,32 @@ function updateTimer() {
 
 // Add time to leaderboard
 function addTimeToLeaderboard(time) {
-    previousTimes.unshift(time); // Add to start of array
-    if (previousTimes.length > 10) {
-        previousTimes.pop(); // Remove last element if more than 10
-    }
+    // Update last score
+    lastScoreElement.textContent = `Last Score: ${formatTime(time)}s`;
     
-    // Update leaderboard display
-    timesListElement.innerHTML = '';
-    previousTimes.forEach((time, index) => {
-        const li = document.createElement('li');
-        li.textContent = `${index + 1}. ${formatTime(time)}s`;
-        timesListElement.appendChild(li);
-    });
+    // Update high score
+    if (highScore === null || time < highScore) {
+        highScore = time;
+        highScoreElement.textContent = `High Score: ${formatTime(highScore)}s`;
+        // Add celebration effect for new high score
+        highScoreElement.style.color = '#4CAF50';
+        setTimeout(() => {
+            highScoreElement.style.color = '';
+        }, 1000);
+    }
 }
 
-// Restart game (updated version)
+// Get the restart button
+const restartButton = document.getElementById('restartButton');
+
+// Add click/touch handler for restart button
+restartButton.addEventListener('click', restartGame);
+restartButton.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    restartGame();
+});
+
+// Update restart game function
 function restartGame() {
     player.x = 20;
     player.y = canvas.height - 70;
@@ -398,12 +420,13 @@ function restartGame() {
     gameLost = false;
     startTime = Date.now();
     timerRunning = true;
+    restartButton.style.display = 'none';
     
     // Reset obstacles to new random positions
     obstacles = createRandomObstacles();
 }
 
-// Draw messages
+// Update draw messages function
 function drawMessages() {
     ctx.font = '48px Arial';
     ctx.textAlign = 'center';
@@ -411,19 +434,18 @@ function drawMessages() {
     if (gameWon) {
         ctx.fillStyle = 'green';
         ctx.fillText('You get a hug!', canvas.width/2, canvas.height/2);
-        ctx.font = '24px Arial';
-        ctx.fillText('Press R to play again', canvas.width/2, canvas.height/2 + 40);
         
         // Stop timer and add to leaderboard if not already added
         if (timerRunning) {
             timerRunning = false;
             addTimeToLeaderboard(currentTime);
         }
+        
+        restartButton.style.display = 'block';
     } else if (gameLost) {
         ctx.fillStyle = 'red';
         ctx.fillText('Try Again!', canvas.width/2, canvas.height/2);
-        ctx.font = '24px Arial';
-        ctx.fillText('Press R to restart', canvas.width/2, canvas.height/2 + 40);
+        restartButton.style.display = 'block';
         timerRunning = false;
     }
 }
@@ -440,25 +462,49 @@ function gameLoop() {
         // Update obstacles
         updateObstacles();
         
-        // Calculate movement direction for mouth orientation
-        let isMoving = rightPressed || leftPressed || upPressed || downPressed;
-        if (!isMoving) {
-            // Reset mouth angle when not moving
-            mouthAngle = Math.max(0, mouthAngle - MOUTH_SPEED);
-        }
-        
-        // Move the player based on key presses
-        if(rightPressed && player.x < canvas.width - player.size) {
-            player.x += player.speed;
-        }
-        if(leftPressed && player.x > 0) {
-            player.x -= player.speed;
-        }
-        if(upPressed && player.y > 0) {
-            player.y -= player.speed;
-        }
-        if(downPressed && player.y < canvas.height - player.size) {
-            player.y += player.speed;
+        // Handle movement
+        if (touchActive) {
+            // Calculate direction vector
+            const dx = targetX - player.x;
+            const dy = targetY - player.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > 1) {
+                // Move player towards touch point at constant speed
+                player.x += (dx / distance) * PLAYER_SPEED;
+                player.y += (dy / distance) * PLAYER_SPEED;
+                
+                // Keep player within canvas boundaries
+                player.x = Math.max(0, Math.min(player.x, canvas.width - player.size));
+                player.y = Math.max(0, Math.min(player.y, canvas.height - player.size));
+                
+                // Update mouth animation while moving
+                mouthAngle = Math.min(mouthAngle + MOUTH_SPEED, MAX_MOUTH_ANGLE);
+            } else {
+                mouthAngle = Math.max(0, mouthAngle - MOUTH_SPEED);
+            }
+        } else {
+            // Keyboard controls
+            if(rightPressed && player.x < canvas.width - player.size) {
+                player.x += PLAYER_SPEED;
+            }
+            if(leftPressed && player.x > 0) {
+                player.x -= PLAYER_SPEED;
+            }
+            if(upPressed && player.y > 0) {
+                player.y -= PLAYER_SPEED;
+            }
+            if(downPressed && player.y < canvas.height - player.size) {
+                player.y += PLAYER_SPEED;
+            }
+            
+            // Update mouth animation for keyboard movement
+            let isMoving = rightPressed || leftPressed || upPressed || downPressed;
+            if (!isMoving) {
+                mouthAngle = Math.max(0, mouthAngle - MOUTH_SPEED);
+            } else {
+                mouthAngle = Math.min(mouthAngle + MOUTH_SPEED, MAX_MOUTH_ANGLE);
+            }
         }
         
         // Check for collisions
