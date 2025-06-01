@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My First Game</title>
+    <style>
+        /* Simple styling to center the canvas */
+        canvas {
+            border: 2px solid black;
+            background: white;
+            margin-bottom: 20px;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #f0f0f0;
+        }
+        .game-container {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+        }
+        .leaderboard {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 150px;
+        }
+        .leaderboard h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 16px;
+            text-align: center;
+        }
+        .times-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .times-list li {
+            padding: 3px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .timer {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-family: monospace;
+            font-size: 20px;
+            color: #333;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        .title {
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .heart {
+            color: red;
+            font-size: 28px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="leaderboard">
+            <h3>Last 10 Times</h3>
+            <ul id="timesList" class="times-list"></ul>
+        </div>
+        <div style="position: relative;">
+            <div id="timer" class="timer">Time: 0.0s</div>
+            <canvas id="gameCanvas" width="400" height="400"></canvas>
+        </div>
+    </div>
+    <div class="title">
+        Love in NW London <span class="heart">❤️</span>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html> 
